@@ -214,11 +214,11 @@ def identify_file_from_cnmt(filepath):
     titleId = None
     version = None
     titleType = None
-    container = factory(Path(filepath).resolve())
-    container.open(filepath, 'rb')
-    if filepath.lower().endswith(('.xci', '.xcz')):
-        container = container.hfs0['secure']
     try:
+        container = factory(Path(filepath).resolve())
+        container.open(filepath, 'rb')
+        if filepath.lower().endswith(('.xci', '.xcz')):
+            container = container.hfs0['secure']
         for nspf in container:
             if isinstance(nspf, Nca.Nca) and nspf.header.contentType == Type.Content.META:
                 for section in nspf:
