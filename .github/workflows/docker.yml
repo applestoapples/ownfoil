@@ -29,17 +29,19 @@ jobs:
         id: buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to Docker Hub
+      - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GH_PAT }} # Use the secret you created
+
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: a1ex4/ownfoil
+          images: apples2appls/ownfoil
           flavor: |
             latest=auto
           tags: |
@@ -50,19 +52,12 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
 
-      - name: Set platforms based on branch or tag
-        run: |
-          if [[ "${GITHUB_REF}" == "refs/heads/master" || "${GITHUB_REF}" == refs/tags/* ]]; then
-            echo "PLATFORMS=linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6" >> $GITHUB_ENV
-          else
-            echo "PLATFORMS=linux/amd64,linux/arm64" >> $GITHUB_ENV
-          fi
-
       - name: Build and push Docker image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v5
         with:
           context: .
-          platforms: ${{ env.PLATFORMS }}
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: |
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
+            ${{ github.ref_type == 'tag' && format('ghcr.io/{0}:{1}', github.repository, github.ref_name) || '' }}
